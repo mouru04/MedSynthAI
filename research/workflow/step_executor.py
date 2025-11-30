@@ -1,6 +1,7 @@
 import time
 import sys
 import os
+import logging
 
 # 设置动态项目目录
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -154,6 +155,7 @@ class StepExecutor:
         }
         
         try:
+            logging.info(f"--- 开始执行 Round {step_num} ---")
             # 更新任务管理器的当前步骤
             task_manager.current_step = step_num
             
@@ -162,6 +164,7 @@ class StepExecutor:
                 step_num, case_data, logger, is_first_step, doctor_question
             )
             step_result["patient_response"] = patient_response
+            logging.info(f"患者: {patient_response}")
             
             # 更新对话历史
             if is_first_step:
@@ -241,12 +244,14 @@ class StepExecutor:
                 step_num, logger, recipient_result, prompter_result, new_guidance
             )
             step_result["doctor_question"] = doctor_question
+            logging.info(f"医生: {doctor_question}")
             
             # Step 9: 使用Evaluator进行评分
             evaluator_result = self._execute_evaluator(
                 step_num, logger, case_data, step_result
             )
             step_result["evaluator_result"] = evaluator_result
+            logging.info(f"评估结果: {evaluator_result}")
             
             # Step 10: 获取任务完成情况摘要
             step_result["task_completion_summary"] = task_manager.get_completion_summary()

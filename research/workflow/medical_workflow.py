@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional
 import time
+import logging
 from .task_manager import TaskManager, TaskPhase
 from .step_executor import StepExecutor
 from .workflow_logger import WorkflowLogger
@@ -197,6 +198,7 @@ class MedicalWorkflow:
         self.current_triage = step_result["triage_result"]
         self._last_doctor_question = step_result["doctor_question"]
         self.current_guidance = step_result.get("new_guidance", self.current_guidance)
+        self._last_patient_response = step_result["patient_response"]
     def _print_step_progress(self, step_num: int):
         """
         打印step进度信息
@@ -207,24 +209,28 @@ class MedicalWorkflow:
         current_phase = self.task_manager.get_current_phase()
         completion_summary = self.task_manager.get_completion_summary()
         
-        print(f"\n=== Step {step_num} 完成 ===")
-        print(f"当前阶段: {current_phase.value}")
+        logging.info(f"\n=== Round {step_num} 完成 ===")
+        logging.info(f"当前阶段: {current_phase.value}")
         
         # 显示分诊信息
         if self.current_triage and self.current_triage.get("primary_department") and self.current_triage.get("candidate_secondary_department"):
-            print(f"科室分诊: {self.current_triage['primary_department']} → {self.current_triage['secondary_department']}")
-            print(f"候选科室分诊: {self.current_triage['candidate_primary_department']} → {self.current_triage['candidate_secondary_department']}")
-            print(f"分诊理由: {self.current_triage['triage_reasoning'][:50]}...")
+            logging.info(f"科室分诊: {self.current_triage['primary_department']} → {self.current_triage['secondary_department']}")
+            logging.info(f"候选科室分诊: {self.current_triage['candidate_primary_department']} → {self.current_triage['candidate_secondary_department']}")
+            logging.info(f"分诊理由: {self.current_triage['triage_reasoning'][:50]}...")
         
         # 显示各阶段完成情况
         for phase_name, phase_info in completion_summary["phases"].items():
             status = "✓" if phase_info["is_completed"] else "○"
-            print(f"{status} {phase_name}: {phase_info['completed']}/{phase_info['total']} 任务完成 "
+            logging.info(f"{status} {phase_name}: {phase_info['completed']}/{phase_info['total']} 任务完成 "
                   f"({phase_info['completion_rate']:.1%})")
         
-        print(f"对话轮次: {step_num}")
-        print(f"最新医生问题: {getattr(self, '_last_doctor_question', '暂无')[:50]}...")
-        print("-" * 60)
+        logging.info(f"对话轮次: {step_num}")
+        logging.info(f"最新患者问题: {getattr(self, '_last_patient_response', '暂无')[:50]}...")
+        logging.info(f"最新医生问题: {getattr(self, '_last_doctor_question', '暂无')[:50]}...")
+        logging.info(f"当前主诉: {self.current_chief_complaint[:50]}...")
+        logging.info(f"当前HPI: {self.current_hpi[:50]}...")
+        logging.info(f"当前 PH: {self.current_ph[:50]}...")
+        logging.info("-" * 60)
     
     def get_current_status(self) -> Dict[str, Any]:
         """

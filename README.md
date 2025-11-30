@@ -42,21 +42,29 @@ MedSynthAI/
 ├── data_processing /      # 数据处理模块
 │   ├── iiyi_crawl4ai_kewords.py     #数据处理代码
 │
-├── research/              # 科研模式（规划中）
+├── research/              # 科研模式
 │   ├── workflow/          # 完整工作流实现
 │       ├── medical_workflow.py    # 主工作流控制器
 │           ├── task_manager.py        # 任务阶段管理
 │           ├── step_executor.py       # 步骤执行器
 │           └── workflow_logger.py     # 日志记录
-│   ├── dataset/           # 数据集管理
-│   └── evaluation/        # 评估报告生成
-|   ├── Drawing /          #绘图代码文件（规划中）
+|   ├── Drawing /                      #绘图代码文件
 │   └── results/
-    ├── batch_report_YYYYMMDD_HHMMSS.json    # 详细的JSON格式报告
-    ├── batch_summary_YYYYMMDD_HHMMSS.txt    # 人类可读的摘要报告
-    └── logs/                                # 详细的处理日志
-        ├── workflow_0001_case_XXXX.jsonl    # 每个病例的处理日志
-        └── batch_processing_YYYYMMDD_HHMMSS.log  # 批处理系统日志
+│       ├── batch_report_YYYYMMDD_HHMMSS.json    # 详细的JSON格式报告
+│       ├── batch_summary_YYYYMMDD_HHMMSS.txt    # 人类可读的摘要报告
+│       └── logs/                                # 详细的处理日志
+│           ├── workflow_0001_case_XXXX.jsonl    # 每个病例的处理日志
+            └── batch_processing_YYYYMMDD_HHMMSS.log  # 批处理系统日志
+    ├── utils/                          # 工具函数
+        ├── parse_arguments.py          # 命令行参数解析
+        ├── setup_logging.py            # 日志系统设置
+        ├── load_dataset.py             # 数据集加载与切分
+        ├── is_case_completed.py        # 检查病例是否已处理，支持断点续跑
+        ├── run_workflow_batch.py       # 批量处理主逻辑
+        ├── process_single_sample.py    # 单一样本处理逻辑
+        ├── update_progress.py          # 线程安全的进度更新器
+        ├── print_progress_report.py    # 打印实时进度报告
+        └── generate_summary_report.py  # 生成最终的摘要和详细报告
     ├── main.py                         # 科研模式主函数
     ├── config.py                       # 模型配置文件
 │
@@ -99,6 +107,8 @@ pip install -r requirements.txt
 
 ## 运行系统
 ### 科研模式
+
+科研模式用于对整个数据集进行批量自动化评估。系统支持三种不同的任务控制模式，通过 --controller-mode 参数进行切换，以满足不同的研究需求。
 
 ### 工程模式
 

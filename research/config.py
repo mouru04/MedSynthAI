@@ -15,13 +15,34 @@ if not API_KEY or not BASE_URL:
     raise ValueError("未找到 API_KEY 或 BASE_URL。请确保在项目根目录中创建了 .env 文件并设置了它们。")
 
 LLM_CONFIG = {
-    # 将 "deepseek-chat" 的配置键名改为更通用的 "deepseek"
     "deepseek": {
-        # 关键修改：将 class 从 "DeepSeek" 改为 "OpenAILike"
         "class": "OpenAILike", 
         "params": {
-            # 将模型 ID 放在 id 或 model 参数中，agno 会处理
             "id": "deepseek-chat",
+            "api_key": API_KEY,
+            "base_url": BASE_URL
+        }
+    },
+    "glm-4.6": {
+        "class": "OpenAILike",
+        "params": {
+            "id": "glm-4.6",
+            "api_key": API_KEY,
+            "base_url": BASE_URL
+        }
+    },
+    "gpt-oss": {
+        "class": "OpenAILike",
+        "params": {
+            "id": "gpt-oss-20b",
+            "api_key": API_KEY,
+            "base_url": BASE_URL
+        }
+    },
+    "MiniMax-M2": {
+        "class": "OpenAILike",
+        "params": {
+            "id": "MiniMax-M2",
             "api_key": API_KEY,
             "base_url": BASE_URL
         }
