@@ -58,7 +58,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--num-threads', 
         type=int, 
-        default=2,
+        default=1,
         help='并行处理线程数'
     )
     parser.add_argument(
