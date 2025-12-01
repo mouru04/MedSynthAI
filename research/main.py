@@ -18,9 +18,9 @@ from typing import Dict, Any, List, Optional
 # 导入本地模块
 from workflow import MedicalWorkflow
 from config import LLM_CONFIG
-from utils.parse_arguments import parse_arguments
 from utils.update_progress import BatchProcessor
 from utils.is_case_completed import is_case_completed
+from utils.parse_arguments import parse_arguments
 from utils.process_single_sample import process_single_sample
 from utils.load_dataset import load_dataset
 from utils.setup_logging import setup_logging
@@ -37,12 +37,13 @@ from guidance.loader import GuidanceLoader
 
 def main():
     """主入口函数"""
-    # 解析参数
+    # 解析命令行参数
     args = parse_arguments()
-    
+    logging.info(f"批处理参数: {args}")
     # 设置日志
     setup_logging(args.batch_log_dir, args.log_level)
-    
+
+
     logging.info("=" * 60)
     logging.info("AIM医疗问诊工作流批处理系统启动")
     logging.info("=" * 60)

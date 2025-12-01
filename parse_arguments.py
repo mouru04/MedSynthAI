@@ -58,7 +58,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--num-threads', 
         type=int, 
-        default=4,
+        default=2,
         help='并行处理线程数'
     )
     parser.add_argument(
@@ -76,7 +76,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--end-index', 
         type=int, 
-        default=100,
+        default=5000,
         help='结束处理的样本索引（不包含）'
     )
     parser.add_argument(
@@ -130,7 +130,7 @@ def parse_arguments() -> argparse.Namespace:
         '--controller-mode',
         type=str,
         choices=['normal', 'sequence', 'score_driven'],
-        default='normal',  #默认为normal模式
+        default='score_driven',  #默认为normal模式
         help='任务控制器模式：normal为智能模式（需要LLM推理），sequence为顺序模式（直接选择第一个任务），score_driven为分数驱动模式（选择当前任务组中分数最低的任务）'
     )
     
