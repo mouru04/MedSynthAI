@@ -18,7 +18,7 @@ LLM_CONFIG = {
     "deepseek": {
         "class": "OpenAILike", 
         "params": {
-            "id": "deepseek-chat",
+            "id": "gpt-oss-20b",
             "api_key": API_KEY,
             "base_url": BASE_URL
         }

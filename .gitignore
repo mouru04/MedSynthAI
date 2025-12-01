@@ -14,7 +14,11 @@
 # 结果输出目录
 results/
 results_11_30/
- 
+
+# 画图目录
+research/Draw/clean_workflow_valid/cleaned_data
+research/Draw/figure
+
 # 测试相关（如果您不想提交测试文件）
 tests/
 

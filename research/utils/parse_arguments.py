@@ -117,13 +117,8 @@ def parse_arguments() -> argparse.Namespace:
         '--model-type', 
         type=str, 
         choices=available_models,
-        default='gpt-oss',
+        default='deepseek',
         help=f'使用的语言模型类型，可选: {", ".join(available_models)}'
-    )
-    parser.add_argument(
-        '--list-models', 
-        action='store_true',
-        help='显示所有可用的模型配置并退出'
     )
     parser.add_argument(
         '--model-config', 
