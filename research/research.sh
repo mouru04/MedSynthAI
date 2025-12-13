@@ -11,7 +11,7 @@
 DATASET_PATH="research/dataset/test_data.json"
 DEPARTMENT_GUIDANCE_FILE="guidance/department_inquiry_guidance.json"
 COMPARISON_RULES_FILE="guidance/department_comparison_guidance.json"
-NUM_THREADS=2
+NUM_THREADS=4
 MAX_STEPS=30
 START_INDEX=0
 END_INDEX=100

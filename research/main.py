@@ -39,7 +39,7 @@ def main():
     """主入口函数"""
     # 解析命令行参数
     args = parse_arguments()
-    logging.info(f"批处理参数: {args}")
+    
     # 设置日志
     setup_logging(args.batch_log_dir, args.log_level)
 
