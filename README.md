@@ -190,13 +190,12 @@ nano .env
 **配置前端**
 ```bash
 # 切换到前端目录
-cd MedSynthAI-Frontend
+cd Frontend
 
 # 安装依赖
 npm install
 ```
 
-// ...existing code...
 ### 3. 运行系统
 
 #### 模式一：科研模式 (批量评估)
