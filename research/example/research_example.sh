@@ -1,79 +1,91 @@
 #!/bin/bash
 
 # 描述：
-# 该脚本用于自动化执行数据清洗和图表绘制：
-# 1. 接收三种模式的原始数据目录作为参数。
-# 2. 清洗数据，并为每种模式生成独立的图表。
-# 3. 绘制一个综合所有模式的对比图。
+# 该脚本用于自动化执行研究流程：
+# 1. 循环运行 'normal', 'sequence', 'score_driven' 三种模式。
+# 2. 对每种模式，通过命令行参数运行批处理，并生成结果目录。
+# 3. 调用 research/Draw/draw_all.sh 脚本，传递三种模式的结果目录以生成图表。
 #
 # 使用方法：
 # 1. 激活您的 Python 环境 (例如: conda activate my_env)
-# 2. 确保脚本有执行权限: chmod +x research/Draw/draw_all_example.sh
-# 3. 运行脚本: bash research/Draw/draw_all_example.sh --normal-raw-dir path1 --sequence-raw-dir path2 --score-raw-dir path3
+# 2. 运行脚本: bash research/research_example.sh
 
-# --- 解析输入参数 ---
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --normal-raw-dir) NORMAL_RAW_DATA_DIR="$2"; shift ;;
-        --sequence-raw-dir) SEQUENCE_RAW_DATA_DIR="$2"; shift ;;
-        --score-raw-dir) SCORE_RAW_DATA_DIR="$2"; shift ;;
-        *) echo "未知参数: $1"; exit 1 ;;
+# --- 通用配置 ---
+DATASET_PATH="research/dataset/test_data.json"
+DEPARTMENT_GUIDANCE_FILE="guidance/department_inquiry_guidance.json"
+COMPARISON_RULES_FILE="guidance/department_comparison_guidance.json"
+NUM_THREADS=4
+MAX_STEPS=30
+START_INDEX=0
+END_INDEX=100
+MODEL_TYPE="gpt-oss"
+CURRENT_DATE=$(date +"%m%d")
+
+# --- 模式和路径配置 ---
+MODES=("normal" "sequence" "score_driven")
+NORMAL_LOG_DIR=""
+SEQUENCE_LOG_DIR=""
+SCORE_DRIVEN_LOG_DIR=""
+
+# --- 循环运行所有模式 ---
+for MODE in "${MODES[@]}"; do
+    echo "=================================================="
+    echo "🚀 开始运行模式: $MODE"
+    echo "=================================================="
+
+    # 为每种模式定义唯一的输出目录
+    RESULTS_DIR="results/results_${CURRENT_DATE}_${MODE}_${MODEL_TYPE}"
+    LOG_DIR="$RESULTS_DIR/logs"
+    OUTPUT_DIR="$RESULTS_DIR/batch_results"
+    BATCH_LOG_DIR="$RESULTS_DIR/batch_logs"
+
+    # 确保目录存在且为空
+    rm -rf "$RESULTS_DIR"
+    mkdir -p "$LOG_DIR" "$OUTPUT_DIR" "$BATCH_LOG_DIR"
+
+    # 运行 main.py 批处理系统，通过命令行传递参数
+    echo "🐍 正在运行 main.py..."
+    python research/main.py \
+        --dataset-path "$DATASET_PATH" \
+        --department_guidance_file "$DEPARTMENT_GUIDANCE_FILE" \
+        --comparison_rules_file "$COMPARISON_RULES_FILE" \
+        --log-dir "$LOG_DIR" \
+        --output-dir "$OUTPUT_DIR" \
+        --batch-log-dir "$BATCH_LOG_DIR" \
+        --model-type "$MODEL_TYPE" \
+        --controller-mode "$MODE" \
+        --num-threads "$NUM_THREADS" \
+        --max-steps "$MAX_STEPS" \
+        --start-index "$START_INDEX" \
+        --end-index "$END_INDEX"
+
+    if [ $? -ne 0 ]; then
+        echo "❌ main.py 在模式 '$MODE' 下执行失败！请检查日志。"
+        exit 1
+    fi
+
+    # 保存该模式的日志目录路径
+    case $MODE in
+        normal) NORMAL_LOG_DIR="$LOG_DIR" ;;
+        sequence) SEQUENCE_LOG_DIR="$LOG_DIR" ;;
+        score_driven) SCORE_DRIVEN_LOG_DIR="$LOG_DIR" ;;
     esac
-    shift
+
+    echo "✅ 模式 '$MODE' 完成！结果保存在 $RESULTS_DIR"
 done
 
-if [ -z "$NORMAL_RAW_DATA_DIR" ] || [ -z "$SEQUENCE_RAW_DATA_DIR" ] || [ -z "$SCORE_RAW_DATA_DIR" ]; then
-    echo "❌ 错误: 必须提供 --normal-raw-dir, --sequence-raw-dir, 和 --score-raw-dir 参数。"
+# --- 调用 draw_all.sh 脚本生成图表 ---
+echo "=================================================="
+echo "📊 所有模式运行完毕，开始生成图表..."
+echo "=================================================="
+bash research/Draw/draw_all_example.sh \
+    --normal-raw-dir "$NORMAL_LOG_DIR" \
+    --sequence-raw-dir "$SEQUENCE_LOG_DIR" \
+    --score-raw-dir "$SCORE_DRIVEN_LOG_DIR"
+
+if [ $? -ne 0 ]; then
+    echo "❌ draw_all_example.sh 执行失败！请检查日志。"
     exit 1
 fi
 
-# --- 配置目录 ---
-BASE_CLEANED_DIR="research/Draw/cleaned_data"
-NORMAL_CLEANED_DATA_DIR="$BASE_CLEANED_DIR/normal"
-SEQUENCE_CLEANED_DATA_DIR="$BASE_CLEANED_DIR/sequence"
-SCORE_CLEANED_DATA_DIR="$BASE_CLEANED_DIR/score_driven"
-FIGURES_DIR="research/Draw/Figures/figures_$(date +"%Y%m%d")"
-
-# --- 配置画图参数 ---
-MAX_ROUNDS=30
-LEARNING_CURVE_OUTPUT_FILE="learning_curve.png"
-SCORE_DISTRIBUTIONS_OUTPUT_FILE="score_distributions.png"
-TRIANGLE_OUTPUT_FILE="medical_history_quality_triangle.png"
-
-# --- 设置环境 ---
-echo "🔧 设置输出目录..."
-mkdir -p "$NORMAL_CLEANED_DATA_DIR" "$SEQUENCE_CLEANED_DATA_DIR" "$SCORE_CLEANED_DATA_DIR" "$FIGURES_DIR"
-
-# --- 数据清洗 ---
-echo "🔄 正在清洗 'Normal' 模式数据..."
-python research/Draw/clean_workflow_valid/clean.py --data_dir "$NORMAL_RAW_DATA_DIR" --output_dir "$NORMAL_CLEANED_DATA_DIR"
-
-echo "🔄 正在清洗 'Sequence' 模式数据..."
-python research/Draw/clean_workflow_valid/clean.py --data_dir "$SEQUENCE_RAW_DATA_DIR" --output_dir "$SEQUENCE_CLEANED_DATA_DIR"
-
-echo "🔄 正在清洗 'Score Driven' 模式数据..."
-python research/Draw/clean_workflow_valid/clean.py --data_dir "$SCORE_RAW_DATA_DIR" --output_dir "$SCORE_CLEANED_DATA_DIR"
-
-# --- 绘制各模式图表 ---
-MODES=("normal" "sequence" "score_driven")
-CLEANED_DIRS=("$NORMAL_CLEANED_DATA_DIR" "$SEQUENCE_CLEANED_DATA_DIR" "$SCORE_CLEANED_DATA_DIR")
-
-for i in "${!MODES[@]}"; do
-    MODE=${MODES[$i]}
-    DATA_DIR=${CLEANED_DIRS[$i]}
-    echo "📊 正在为 '$MODE' 模式绘制图表..."
-    
-    python research/Draw/draw_learning_curve.py --cleaned_data_dir "$DATA_DIR" --figures_dir "$FIGURES_DIR" --output_file "${MODE}_${LEARNING_CURVE_OUTPUT_FILE}" --max_rounds "$MAX_ROUNDS"
-    python research/Draw/draw_score_distributions.py --cleaned_data_dir "$DATA_DIR" --figures_dir "$FIGURES_DIR" --output_file "${MODE}_${SCORE_DISTRIBUTIONS_OUTPUT_FILE}"
-done
-
-# --- 绘制综合对比图表 ---
-echo "📊 正在绘制综合医疗历史质量三角图..."
-python research/Draw/draw_medical_history_quality_triangle.py \
-    --normal_dir "$NORMAL_CLEANED_DATA_DIR" \
-    --sequence_dir "$SEQUENCE_CLEANED_DATA_DIR" \
-    --score_dir "$SCORE_CLEANED_DATA_DIR" \
-    --figures_dir "$FIGURES_DIR" \
-    --output_file "$TRIANGLE_OUTPUT_FILE"
-
-echo "✅ 所有绘图任务完成！图表保存在 $FIGURES_DIR"
+echo "✅ 全部任务完成！"

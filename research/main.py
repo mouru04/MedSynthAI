@@ -49,15 +49,6 @@ def main():
     logging.info("=" * 60)
     
     try:
-        # 验证参数
-        if args.num_threads <= 0:
-            raise ValueError("线程数必须大于0")
-        
-        if args.max_steps <= 0:
-            raise ValueError("最大步数必须大于0")
-        
-        logging.info(f"使用模型: {args.model_type} ({LLM_CONFIG[args.model_type]['class']})")
-        
         # 加载数据集
         dataset = load_dataset(
             args.dataset_path, 
