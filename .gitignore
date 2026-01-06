@@ -32,6 +32,10 @@ Docx/
 # 可视化文件
 research/visualizations/
 
+# 忽略原始的研究脚本，推荐使用 example 目录下的版本
+research/research.sh
+research/Draw/draw_all.sh
+
 # 其他项目特定文件
 .serena
 CLAUDE.md
