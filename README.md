@@ -196,11 +196,24 @@ cd MedSynthAI-Frontend
 npm install
 ```
 
+// ...existing code...
 ### 3. 运行系统
 
 #### 模式一：科研模式 (批量评估)
 
 科研模式设计用于自动化运行实验。`research/research.sh` 脚本是完成此任务的核心。
+
+> **重要提示：脚本更新**
+>
+> 为了优化实验流程并修复潜在问题，请使用 `research/example/` 目录中的示例脚本替换现有的研究脚本。
+>
+> 1.  **替换主运行脚本**：
+>     将 `research/example/research_example.sh` 的内容复制并覆盖到 `research/research.sh`。
+>
+> 2.  **替换绘图脚本**：
+>     将 `research/example/draw_all_example.sh` 的内容复制并覆盖到 `research/Draw/draw_all.sh`。
+>
+> 完成替换后，再执行后续的运行命令。
 
 **自动化运行所有实验**:
 该脚本将自动为 `normal`, `sequence`, `score_driven` 三种控制器模式分别运行批处理，并将结果保存在带时间戳和模式名的独立目录中，最后调用绘图脚本生成所有分析图表。
