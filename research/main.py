@@ -73,7 +73,6 @@ def main():
         # 打印初始化信息
         if args.department_filter:
             print(f"筛选科室: {args.department_filter}")
-            print(f"总共需要处理 {total_cases} 个患者病例")
         print(f"并行处理线程数: {args.num_threads}")
         print(f"结果将保存至 {args.output_dir} 目录")
         if args.use_inquiry_guidance:

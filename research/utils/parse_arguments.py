@@ -117,7 +117,7 @@ def parse_arguments() -> argparse.Namespace:
         '--model-type', 
         type=str, 
         choices=available_models,
-        default='gpt-oss',
+        default='deepseek',  #可选模型阅读config.py中的LLM_CONFIG
         help=f'使用的语言模型类型，可选: {", ".join(available_models)}'
     )
     parser.add_argument(

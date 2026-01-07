@@ -157,7 +157,7 @@ MedSynthAI/
 - **Python**: 推荐 `3.12+`
 - **Conda**: 用于管理Python环境。
 - **Node.js**: 用于运行前端项目。
-- **PostgreSQL**: 工程模式需要使用的数据库。请确保已安装并正在运行。
+- **SQLITE**: 工程模式需要使用的数据库。请确保已安装并正在运行。
 
 ### 2. 安装与配置
 
@@ -167,24 +167,26 @@ git clone <your-repo-url>
 cd MedSynthAI
 ```
 
-**配置后端**
+**创建虚拟环境**
 ```bash
 # 1. 创建并激活Conda环境
 conda create -n medsynthai python=3.12
+# 激活虚拟环境
 conda activate medsynthai
 
 # 2. 安装Python依赖
 pip install -r requirements.txt
+```
 
-# 3. 配置环境变量
+**配置后端**
+```bash
+# 1. 配置环境变量
 # 复制示例文件
 cp .env.example .env
 # 编辑.env文件，填入你的LLM API Key和Base URL
-nano .env
+a、运行 nano .env 
+b、或者直接打开.env文件替换填入你的LLM API Key和Base URL
 
-# 4. (仅工程模式) 配置数据库
-# 编辑 service/Model/base.py 文件，修改为你的PostgreSQL连接信息
-# 系统将在首次运行时自动创建所需的表
 ```
 
 **配置前端**
@@ -200,6 +202,17 @@ npm install
 
 #### 模式一：科研模式 (批量评估)
 
+**手动运行单个实验**:
+如果您想手动运行，需要先进行参数配置。
+a、你可以使用 `python research/main.py --help` 查看所有可用参数，并在research/utils/parse_arguments.py选择对应参数的修改
+b、或者在research/utils/parse_arguments.py查看选择对应参数的修改。
+
+参数配置后可以直接通过以下命令运行
+```bash
+python research/main.py
+```
+
+**支持自动化运行实验**:
 科研模式设计用于自动化运行实验。`research/research.sh` 脚本是完成此任务的核心。
 
 > **重要提示：脚本更新**
@@ -226,18 +239,7 @@ bash research/research.sh
 ```
 实验结果（日志、报告）和图表将分别保存在 `results_<date>_*` 和 `research/Draw/Figures/` 目录下。
 
-**手动运行单个实验**:
-如果您想手动运行，可以直接执行 `research/main.py` 并通过命令行参数指定配置。
 
-```bash
-python research/main.py \
-    --model-type gpt-oss \
-    --controller-mode score_driven \
-    --num-threads 8 \
-    --start-index 0 \
-    --end-index 50
-```
-使用 `python research/main.py --help` 查看所有可用参数。
 
 #### 模式二：工程模式 (Web应用)
 
@@ -256,9 +258,24 @@ python service/api_server.py
 **2. 启动前端 (Next.js)**
 ```bash
 # 打开一个新的终端，切换到前端目录
-cd MedSynthAI-Frontend
+cd Frontend
+```
+**相关库安装**
+```bash
+#添加conda-forge 渠道
+conda config --add channels conda-forge
+conda install nodejs -y
 
-# 启动开发服务器
+#验证安装
+node -v  # 查看 Node.js 版本（示例输出：v20.12.0）
+npm -v   # 查看 npm 版本（示例输出：10.5.0）
+
+#
+npm install
+```
+
+**启动开发服务器**
+```bash
 npm run dev
 ```
 前端应用将运行在 `http://localhost:3000`。
