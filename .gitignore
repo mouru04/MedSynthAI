@@ -17,6 +17,8 @@ results_11_30/
 results1201_sequence/
 research/Draw/Figures
 results_11_30/results_11_30_Agent_Driven/
+results0107/
+results_0107_normal_deepseek/
 # 画图目录
 research/Draw/clean_workflow_valid/cleaned_data
 research/Draw/figure
@@ -60,7 +62,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/

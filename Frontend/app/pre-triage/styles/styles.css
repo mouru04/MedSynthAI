@@ -1,6 +1,0 @@
-@media (forced-colors: active) {
-  /* 使用新的强制颜色模式标准 */
-  body {
-    forced-color-adjust: auto;
-  }
-}
