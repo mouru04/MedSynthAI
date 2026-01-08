@@ -11,6 +11,7 @@
 // These values will be replaced at build time with values from the system environment
 // or the defaults specified in next.config.ts
 export const API_HOST = process.env.NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_HOST || '192.168.31.34';
+// export const API_HOST = process.env.NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_HOST || '192.168.31.188';
 export const API_PORT = process.env.NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_PORT || '8000';
 
 // Full API URL for HTTP requests

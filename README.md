@@ -251,6 +251,18 @@ conda activate medsynthai
 # 启动API服务器
 python service/api_server.py
 ```
+
+
+```bash
+# 如果出现错误：ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8000): address already in use
+lsof -i :8000
+# 终止进程(使用上一步找到的 PID),例如：
+kill -9 xxxxxx
+#重新运行服务
+python service/api_server.py
+```
+
+
 服务将运行在 `http://0.0.0.0:8000`。
 
 **2. 启动前端 (Next.js)**

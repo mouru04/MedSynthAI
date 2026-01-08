@@ -52,8 +52,6 @@ def get_default_args():
     setup_logging(args.log_dir, args.log_level)
     return args
 
-# ...existing code...
-
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat_interaction(request: ChatRequest):
     """问诊交互接口"""

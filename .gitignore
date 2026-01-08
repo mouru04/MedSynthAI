@@ -38,6 +38,9 @@ research/visualizations/
 research/research.sh
 research/Draw/draw_all.sh
 
+# 前端
+Frontend/.next/
+
 # 其他项目特定文件
 .serena
 CLAUDE.md
