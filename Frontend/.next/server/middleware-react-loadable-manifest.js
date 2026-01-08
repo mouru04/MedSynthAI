@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app/page.tsx -> @/app/components/pre-diagnosis-page\":{\"id\":\"app/page.tsx -> @/app/components/pre-diagnosis-page\",\"files\":[\"static/chunks/_app-pages-browser_app_components_pre-diagnosis-page_tsx.js\"]}}"
