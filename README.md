@@ -243,6 +243,11 @@ bash research/research.sh
 
 工程模式需要同时启动后端服务和前端应用。
 
+**0. 准备工作**
+'''bash
+
+'''
+
 **1. 启动后端 (FastAPI)**
 ```bash
 # 确保在项目根目录 (MedSynthAI/) 并已激活Conda环境
@@ -270,18 +275,51 @@ python service/api_server.py
 # 打开一个新的终端，切换到前端目录
 cd Frontend
 ```
-**相关库安装**
+**确保已经进行相关库安装**
 
 ```bash
-#在当前 conda 环境安装 node（保持环境一致）
-conda install -c conda-forge nodejs
 
 # 验证
 node -v
 npm -v
 
-# 安装models
-npm install
+```
+
+**配置前端-后端通信地址**
+
+前端应用需要知道后端API服务器的地址才能正确发送请求。此配置由环境变量控制，并有默认值。
+
+配置文件位于 `Frontend/lib/env.ts`，其中定义了API地址的构成：
+```typescript
+export const API_HOST = process.env.NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_HOST || '127.0.0.1';
+export const API_PORT = process.env.NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_PORT || '8000';
+export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
+```
+
+**如何修改**
+
+最佳实践是**不要直接修改 `env.ts` 文件**，而是通过在前端项目根目录 (`Frontend/`) 创建一个 `.env.local` 文件来覆盖默认值。
+
+**场景一：前后端都在同一台服务器上运行（默认情况）**
+
+- **说明**: 这是最常见的情况，前端和后端都在同一台机器上。
+- **配置**: 您**无需任何额外配置**。系统默认使用 `127.0.0.1` 作为主机地址，`8000` 作为端口号，这正是服务器内部通信所需要的。
+- **最终API地址**: `http://127.0.0.1:8000`
+
+**场景二：前端在本地开发，后端在远程服务器上**
+
+- **说明**: 您在自己的电脑上开发前端，但需要连接到一台远程服务器上的后端API。
+- **配置**:
+    1. 在 `Frontend/` 目录下创建一个名为 `.env.local` 的文件。
+    2. 在该文件中添加以下内容，将 `your-remote-server-ip` 替换为您服务器的公网IP地址：
+       ```
+       NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_HOST=your-remote-server-ip
+       ```
+       如果后端端口不是8000，您也可以通过 `NEXT_PUBLIC_MEDSYNTHAI_FRONTEND_API_PORT` 变量来指定。
+- **最终API地址**: `http://your-remote-server-ip:8000`
+
+完成配置后，重新启动前端开发服务器即可生效。
+
 ```
 
 **启动开发服务器**
