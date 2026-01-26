@@ -262,17 +262,35 @@ export default function PreDiagnosisPage() {
           const arrayBuffer = await audioBlob.arrayBuffer();
           ws.send(arrayBuffer);
         };
-        
+
+        // 用于保存最长的识别结果
+        let longestText = "";
+
         ws.onmessage = (event) => {
           const result = event.data;
-          console.log("[DEBUG] 收到实时转写结果:", result);
-          
+          console.log("[DEBUG] 前端收到消息:", result, "类型:", typeof result, "长度:", result.length);
+
           if (result === "END") {
+            console.log("[DEBUG] 收到END，关闭连接");
             ws.close();
             return;
           }
-          
-          setInput(result);
+
+          // 跳过JSON消息（ready、error等），只处理识别文字
+          if (result.startsWith("{") || result.includes("type")) {
+            console.log("[DEBUG] 跳过JSON消息:", result);
+            return;
+          }
+
+          // 保留最长的结果（因为讯飞返回的是累积结果）
+          if (result.length > longestText.length) {
+            longestText = result;
+            console.log("[DEBUG] 更新输入框，之前:", input, "现在:", longestText);
+            setInput(longestText);
+            console.log("[DEBUG] 更新后的input值:", input); // 立即检查
+          } else {
+            console.log("[DEBUG] 结果太短，不更新。当前最长:", longestText, "收到:", result);
+          }
         };
         
         ws.onerror = (error) => {

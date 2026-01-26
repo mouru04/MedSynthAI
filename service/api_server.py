@@ -28,6 +28,7 @@ if PROJECT_ROOT not in sys.path:
 # 注意：确保 api_chat.py 和 api_report.py 文件保存无误
 from service.API.api_chat import router as chat_router
 from service.API.api_report import router as report_router
+from service.API.api_asr import websocket_asr_endpoint
 
 # --- FastAPI 应用定义 ---
 # 只定义一次 app
@@ -48,7 +49,10 @@ print(f"[CORS] 允许所有来源")
 # 显式打印，确保执行
 print("正在注册路由: /api/chat ...")
 app.include_router(chat_router)
+print("正在注册路由: /api/report ...")
 app.include_router(report_router)
+print("正在注册WebSocket路由: /audio/upload ...")
+app.add_websocket_route("/audio/upload", websocket_asr_endpoint)
 
 @app.get("/health")
 def health_check() -> Dict[str, str]:
