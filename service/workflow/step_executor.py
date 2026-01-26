@@ -519,11 +519,11 @@ class StepExecutor:
             return "请您详细描述一下您的症状，包括什么时候开始的，有什么特点？"
 
     
-    def _execute_evaluator(self, step_num: int, logger: WorkflowLogger, 
+    def _execute_evaluator(self, step_num: int, logger: WorkflowLogger,
                            step_result: Dict[str, Any]):
         """执行Evaluator agent"""
         start_time = time.time()
-        
+
         try:
             # 准备评价器需要的数据格式，包含完整对话历史
             conversation_history = step_result.get("conversation_history", "")
@@ -533,6 +533,15 @@ class StepExecutor:
                 "HPI": step_result.get("updated_hpi", ""),
                 "PH": step_result.get("updated_ph", ""),
                 "chief_complaint": step_result.get("updated_chief_complaint", "")
+            }
+
+            # 构建工程模式下的简化 patient_case（用于 evaluator）
+            patient_case = {
+                "病案介绍": {
+                    "主诉": step_result.get("updated_chief_complaint", ""),
+                    "现病史": step_result.get("updated_hpi", ""),
+                    "既往史": step_result.get("updated_ph", "")
+                }
             }
             
             # 使用全局历史评分
@@ -596,6 +605,7 @@ class StepExecutor:
             
             # 调用支持多轮的评估方法
             result = self.evaluator.run(
+                patient_case=patient_case,
                 current_round=step_num,
                 all_rounds_data=all_rounds_data,
                 historical_scores=historical_scores

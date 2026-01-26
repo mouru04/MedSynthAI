@@ -342,32 +342,32 @@ export default function PreDiagnosisPage() {
   
       const responseInfo = await response.json();
       console.log("[DEBUG] 收到医生回复:", responseInfo);
-      
-      const diagnosisFinished = !responseInfo.doctor_content || responseInfo.doctor_content.trim() === "";
+
+      const diagnosisFinished = !responseInfo.worker_inquiry || responseInfo.worker_inquiry.trim() === "";
       console.log("[DEBUG] 诊断是否完成:", diagnosisFinished);
-  
+
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== thinkingMessageId);
-        
+
         if (diagnosisFinished) {
           console.log("[DEBUG] 诊断已完成，移除思考中消息");
           return filtered;
         }
-  
+
         const doctorMessage: ChatMessage = {
           id: thinkingMessageId,
-          content: responseInfo.doctor_content,
+          content: responseInfo.worker_inquiry,
           role: "doctor",
           timestamp: new Date()
         };
 
         console.log("[DEBUG] 添加医生回复:", doctorMessage);
-  
+
         return [...filtered, doctorMessage];
       });
-  
-      if (!diagnosisFinished && responseInfo.doctor_content) {
-        await fetchTextToSpeech(responseInfo.doctor_content, thinkingMessageId);
+
+      if (!diagnosisFinished && responseInfo.worker_inquiry) {
+        await fetchTextToSpeech(responseInfo.worker_inquiry, thinkingMessageId);
       }
 
       if (diagnosisFinished) {
