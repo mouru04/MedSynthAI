@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
-import { API_BASE_URL, WS_BASE_URL } from "@/lib/env"
+import { API_BASE_URL, WS_BASE_URL, WS_TTS_URL } from "@/lib/env"
 import { cn } from "@/app/lib/utils"
 
 interface ChatMessage {
@@ -33,7 +33,7 @@ export default function PreDiagnosisPage() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   const [isFinished, setIsFinished] = useState(false)
   const audioContextRef = useRef<AudioContext | null>(null)
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const audioSourceRef = useRef<HTMLAudioElement | null>(null)
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
 
   const editor = useEditor({
@@ -57,7 +57,8 @@ export default function PreDiagnosisPage() {
     setMounted(true)
     return () => {
       editor?.destroy()
-      audioSourceRef.current?.stop()
+      audioSourceRef.current?.pause()
+    audioSourceRef.current = null
       audioContextRef.current?.close()
     }
   }, [editor])
@@ -75,7 +76,8 @@ export default function PreDiagnosisPage() {
 
   const playAudio = async (messageId: string, audioBlobUrl: string) => {
     if (currentlyPlaying === messageId) {
-      audioSourceRef.current?.stop()
+      audioSourceRef.current?.pause()
+      audioSourceRef.current = null
       setCurrentlyPlaying(null)
       return
     }
@@ -89,24 +91,21 @@ export default function PreDiagnosisPage() {
         await audioContextRef.current.resume()
       }
 
-      audioSourceRef.current?.stop()
+      audioSourceRef.current?.pause()
+    audioSourceRef.current = null
       setCurrentlyPlaying(messageId)
 
-      const response = await fetch(audioBlobUrl)
-      const arrayBuffer = await response.arrayBuffer()
-      
-      // Add WAV header (assuming PCM data from server)
-      const wavBuffer = addWavHeader(arrayBuffer, 16000, 1)
-      
-      const audioBuffer = await audioContextRef.current.decodeAudioData(wavBuffer)
-      const source = audioContextRef.current.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(audioContextRef.current.destination)
-      source.onended = () => {
+      // 直接使用 HTML5 Audio 播放 MP3
+      const audio = new Audio(audioBlobUrl)
+      audio.onended = () => {
         setCurrentlyPlaying(null)
       }
-      source.start(0)
-      audioSourceRef.current = source
+      audio.onerror = (error) => {
+        console.error('音频播放错误:', error)
+        setCurrentlyPlaying(null)
+      }
+      audio.play()
+      audioSourceRef.current = audio as any
 
     } catch (error) {
       console.error('播放失败:', error)
@@ -114,89 +113,104 @@ export default function PreDiagnosisPage() {
     }
   }
 
-  const addWavHeader = (pcmData: ArrayBuffer, sampleRate: number, numChannels: number): ArrayBuffer => {
-    const header = new ArrayBuffer(44)
-    const view = new DataView(header)
-
-    // RIFF头
-    writeString(view, 0, 'RIFF')
-    view.setUint32(4, 36 + pcmData.byteLength, true)
-    writeString(view, 8, 'WAVE')
-
-    // fmt子块
-    writeString(view, 12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)
-    view.setUint16(22, numChannels, true)
-    view.setUint32(24, sampleRate, true)
-    view.setUint32(28, sampleRate * numChannels * 2, true)
-    view.setUint16(32, numChannels * 2, true)
-    view.setUint16(34, 16, true)
-
-    // data子块
-    writeString(view, 36, 'data')
-    view.setUint32(40, pcmData.byteLength, true)
-
-    const wavBuffer = new Uint8Array(header.byteLength + pcmData.byteLength)
-    wavBuffer.set(new Uint8Array(header), 0)
-    wavBuffer.set(new Uint8Array(pcmData), header.byteLength)
-
-    return wavBuffer.buffer
-  }
-
-  const writeString = (view: DataView, offset: number, str: string) => {
-    for (let i = 0; i < str.length; i++) {
-      view.setUint8(offset + i, str.charCodeAt(i))
-    }
-  }
-
   const fetchTextToSpeech = async (text: string, messageId: string) => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId 
+    setMessages(prev => prev.map(msg =>
+      msg.id === messageId
         ? { ...msg, status: "audio_loading" }
         : msg
     ))
 
     try {
-      const ws = new WebSocket(`${WS_BASE_URL}/text-to-audio`)
-      const audioChunks: Blob[] = []
+      const ws = new WebSocket(`${WS_TTS_URL}/ws/tts`)
+      const audioChunks: Uint8Array[] = []
 
       ws.onopen = () => {
-        ws.send(text)
+        console.log('[TTS] 开始语音合成')
+        // 发送JSON格式的配置
+        ws.send(JSON.stringify({
+          text: text,
+          voice_name: "xiaoyan",
+          speed: 50,
+          volume: 50,
+          pitch: 50,
+          audio_format: "lame"
+        }))
       }
 
       ws.onmessage = async (event) => {
+        // 处理二进制音频数据
         if (event.data instanceof Blob) {
-          audioChunks.push(event.data)
-        } else if (event.data === 'END') {
-          const combinedBlob = new Blob(audioChunks, { type: 'audio/pcm' })
-          const audioUrl = URL.createObjectURL(combinedBlob)
-          
-          setMessages(prev => prev.map(msg => 
-            msg.id === messageId 
-              ? { ...msg, audioBlobUrl: audioUrl, status: undefined }
-              : msg
-          ))
-          ws.close()
+          const arrayBuffer = await event.data.arrayBuffer()
+          audioChunks.push(new Uint8Array(arrayBuffer))
+        }
+        // 处理JSON状态消息
+        else {
+          try {
+            const data = JSON.parse(event.data)
+            console.log('[TTS] 状态消息:', data)
+
+            if (data.type === 'complete') {
+              console.log('[TTS] 语音合成完成，音频块数量:', audioChunks.length)
+
+              if (audioChunks.length > 0) {
+                // 合并所有音频块
+                const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0)
+                const combinedArray = new Uint8Array(totalLength)
+                let offset = 0
+                for (const chunk of audioChunks) {
+                  combinedArray.set(chunk, offset)
+                  offset += chunk.length
+                }
+
+                // 创建 Blob 和 URL（mp3 格式）
+                const combinedBlob = new Blob([combinedArray], { type: 'audio/mpeg' })
+                const audioUrl = URL.createObjectURL(combinedBlob)
+
+                setMessages(prev => prev.map(msg =>
+                  msg.id === messageId
+                    ? { ...msg, audioBlobUrl: audioUrl, status: undefined }
+                    : msg
+                ))
+              } else {
+                console.warn('[TTS] 没有收到音频数据')
+                setMessages(prev => prev.map(msg =>
+                  msg.id === messageId
+                    ? { ...msg, status: undefined }
+                    : msg
+                ))
+              }
+              ws.close()
+            } else if (data.type === 'error') {
+              console.error('[TTS] 错误:', data.message)
+              setMessages(prev => prev.map(msg =>
+                msg.id === messageId
+                  ? { ...msg, status: undefined }
+                  : msg
+              ))
+              ws.close()
+            }
+          } catch (e) {
+            // 不是JSON，忽略
+          }
         }
       }
 
       ws.onerror = (error) => {
-        console.error('语音合成WebSocket错误:', error)
-        setMessages(prev => prev.map(msg => 
-          msg.id === messageId 
+        console.error('[TTS] WebSocket错误:', error)
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageId
             ? { ...msg, status: undefined }
             : msg
         ))
       }
 
       ws.onclose = () => {
-        console.log('语音合成WebSocket已关闭')
+        console.log('[TTS] WebSocket已关闭')
       }
     } catch (error) {
-      console.error('语音合成初始化失败:', error)
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId 
+      console.error('[TTS] 初始化失败:', error)
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId
           ? { ...msg, status: undefined }
           : msg
       ))
@@ -223,7 +237,8 @@ export default function PreDiagnosisPage() {
       mediaRecorder.stream?.getTracks().forEach(track => track.stop())
     }
     
-    audioSourceRef.current?.stop()
+    audioSourceRef.current?.pause()
+    audioSourceRef.current = null
     setCurrentlyPlaying(null)
     
     setSessionId(uuidv4())
@@ -361,8 +376,8 @@ export default function PreDiagnosisPage() {
       const responseInfo = await response.json();
       console.log("[DEBUG] 收到医生回复:", responseInfo);
 
-      const diagnosisFinished = !responseInfo.worker_inquiry || responseInfo.worker_inquiry.trim() === "";
-      console.log("[DEBUG] 诊断是否完成:", diagnosisFinished);
+      // 使用后端返回的 is_completed 字段来判断是否完成
+      const diagnosisFinished = responseInfo.is_completed === true;
 
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== thinkingMessageId);
