@@ -10,6 +10,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 import logging
 import sys
 import os
+from dotenv import load_dotenv
 
 # 添加项目根目录到路径
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +18,9 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from service.utils.audio_processor import convert_webm_to_pcm
+
+# 加载环境变量
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 logger = logging.getLogger(__name__)
 
@@ -194,12 +198,23 @@ async def process_audio_with_xfyun(
         return accumulated_result
 
 
-# 讯飞配置 - 请替换为你的真实密钥
+# 讯飞配置 - 从环境变量读取
 XFYUN_CONFIG = {
-    "app_id": "81e6886d",
-    "api_key": "786aff06a2faf15ce5120c9b59546e40",
-    "api_secret": "ODc2OGVjMDQzYWU2YTE4NjVmZmEwYmVl"
+    "app_id": os.getenv("XFYUN_APP_ID"),
+    "api_key": os.getenv("XFYUN_API_KEY"),
+    "api_secret": os.getenv("XFYUN_API_SECRET")
 }
+
+# 验证配置
+if not all([XFYUN_CONFIG["app_id"], XFYUN_CONFIG["api_key"], XFYUN_CONFIG["api_secret"]]):
+    raise ValueError(
+        "错误：未找到讯飞 ASR API 配置！\n"
+        "请在 .env 文件中设置以下环境变量：\n"
+        "  - XFYUN_APP_ID\n"
+        "  - XFYUN_API_KEY\n"
+        "  - XFYUN_API_SECRET\n"
+        "获取地址：https://console.xfyun.cn/services/cbf"
+    )
 
 
 async def websocket_asr_endpoint(websocket: WebSocket):

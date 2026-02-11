@@ -8,6 +8,7 @@ ASR服务的相反功能：ASR是语音→文字，TTS是文字→语音
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import websockets
 import base64
 import hashlib
@@ -15,20 +16,45 @@ import hmac
 import time
 import json
 import asyncio
+import os
+from dotenv import load_dotenv
 from urllib.parse import urlparse, urlunparse, urlencode
 from typing import Optional
 
 # ==================== 配置区域 ====================
-# 请替换为您在讯飞开放平台申请的真实密钥
-APP_ID = "81e6886d"
-API_KEY = "786aff06a2faf15ce5120c9b59546e40"
-API_SECRET = "ODc2OGVjMDQzYWU2YTE4NjVmZmEwYmVl"
+# 从环境变量加载配置
+load_dotenv()
 
-# 讯飞 TTS 服务地址
-XF_TTS_URL = "wss://tts-api.xfyun.cn/v2/tts"
+# 讯飞 TTS API 配置
+APP_ID = os.getenv("XFYUN_APP_ID")
+API_KEY = os.getenv("XFYUN_API_KEY")
+API_SECRET = os.getenv("XFYUN_API_SECRET")
+
+# 讯飞 TTS 服务地址（可自定义，默认使用讯飞官方地址）
+XF_TTS_URL = os.getenv("XFYUN_TTS_URL", "wss://tts-api.xfyun.cn/v2/tts")
+
+# 验证必需的配置项
+if not APP_ID or not API_KEY or not API_SECRET:
+    raise ValueError(
+        "错误：未找到讯飞 TTS API 配置！\n"
+        "请在 .env 文件中设置以下环境变量：\n"
+        "  - XFYUN_APP_ID\n"
+        "  - XFYUN_API_KEY\n"
+        "  - XFYUN_API_SECRET\n"
+        "获取地址：https://console.xfyun.cn/services/cbf"
+    )
 # ===================================================
 
 app = FastAPI(title="讯飞文字转语音服务", description="TTS - Text To Speech")
+
+# 添加 CORS 中间件，允许前端跨域访问
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源（开发环境）
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有请求头
+)
 
 
 def generate_ws_auth_url(api_url: str) -> str:

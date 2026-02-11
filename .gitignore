@@ -213,7 +213,6 @@ temp/
 data/
 datasets/
 *.csv
-*.json
 *.xlsx
 *.xls
 *.db
